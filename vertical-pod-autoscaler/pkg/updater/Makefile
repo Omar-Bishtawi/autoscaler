@@ -1,6 +1,6 @@
 all: build
 
-TAG?=dev
+TAG?=latest
 REGISTRY?=staging-k8s.gcr.io
 FLAGS=
 TEST_ENVVAR=LD_FLAGS=-s GO111MODULE=on
@@ -42,7 +42,7 @@ ifndef TAG
 	ERR = $(error TAG is undefined)
 	$(ERR)
 endif
-	docker build --pull -t ${REGISTRY}/${FULL_COMPONENT}-$*:${TAG} --build-arg ARCH=$* .
+	docker build --pull -t ${REGISTRY}/${FULL_COMPONENT}:$* --build-arg ARCH=$* .
 
 .PHONY: docker-push
 docker-push: $(addprefix sub-push-,$(ALL_ARCHITECTURES)) push-multi-arch;
@@ -60,12 +60,12 @@ ifndef TAG
 	ERR = $(error TAG is undefined)
 	$(ERR)
 endif
-	docker push ${REGISTRY}/${FULL_COMPONENT}-$*:${TAG}
+	docker push ${REGISTRY}/${FULL_COMPONENT}:$*
 
 .PHONY: push-multi-arch
 push-multi-arch:
-	docker manifest create --amend $(REGISTRY)/${FULL_COMPONENT}:$(TAG) $(shell echo $(ALL_ARCHITECTURES) | sed -e "s~[^ ]*~$(REGISTRY)/${FULL_COMPONENT}\-&:$(TAG)~g")
-	@for arch in $(ALL_ARCHITECTURES); do docker manifest annotate --arch $${arch} $(REGISTRY)/${FULL_COMPONENT}:$(TAG) $(REGISTRY)/${FULL_COMPONENT}-$${arch}:${TAG}; done
+	docker manifest create --amend $(REGISTRY)/${FULL_COMPONENT}:$(TAG) $(shell echo $(ALL_ARCHITECTURES) | sed -e "s~[^ ]*~$(REGISTRY)/${FULL_COMPONENT}:&~g")
+	@for arch in $(ALL_ARCHITECTURES); do docker manifest annotate --arch $${arch} $(REGISTRY)/${FULL_COMPONENT}:$(TAG) $(REGISTRY)/${FULL_COMPONENT}:$${arch}; done
 	docker manifest push --purge $(REGISTRY)/${FULL_COMPONENT}:$(TAG)
 
 docker-builder:
